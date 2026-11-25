@@ -12,7 +12,7 @@
     shortName: 'ASCEND',
     tagline: 'Disciplina que se nota.',
     claim: ['Subí', 'un nivel', '<em>cada día.</em>'],
-    version: '3.1.0',
+    version: '3.2.0',
     // Identificadores para las tiendas (a definir cuando haya dominio propio; formato dominio invertido)
     appId: { ios: 'com.ejemplo.ascend', android: 'com.ejemplo.ascend' },
     // Colores de marca: se aplican sobre las variables CSS al iniciar. Al cambiarlos, revisar el contraste (docs/MARCA.md)

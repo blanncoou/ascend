@@ -1086,3 +1086,4 @@ details > summary{list-style-position:outside}
 .mot-card .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .mot-card details summary { cursor: pointer; }
 .mot-intro .btn { text-transform: none; letter-spacing: 0; font-size: 1rem; }
+.green { color: var(--ok); }

@@ -101,17 +101,27 @@
       body = '<div class="row" style="align-items:flex-start">' + icon('lock', 'sm') + '<div class="small"><b>No disponible todavía.</b><div class="muted" style="margin-top:4px">La sincronización entre dispositivos está preparada pero falta conectar un servidor (Supabase). Mientras tanto, tus datos quedan solo en este dispositivo: usá <b>Exportar mis datos</b> para pasarlos a otro.</div></div></div>';
     } else if (sync.user()) {
       const st = sync.status();
-      body = '<div class="row between small"><span class="muted">Sesión iniciada</span><b>' + esc(sync.user().email || '') + '</b></div>' +
-        '<div class="row between small mt"><span class="muted">Estado</span><b>' + esc(st.message || '—') + '</b></div>' +
-        '<div class="row mt" style="gap:8px;flex-wrap:wrap"><button class="btn primary sm" data-act="sync-now">Sincronizar ahora</button><button class="btn ghost sm" data-act="sync-signout">Cerrar sesión</button></div>';
+      const tone = { ok: 'green', pending: '', syncing: '', offline: 'red', error: 'red', conflict: 'red' }[st.state] || '';
+      const when = st.at ? ' · ' + new Date(st.at).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }) : '';
+      body = '<div class="row between small" style="gap:10px;flex-wrap:wrap"><span class="muted">Cuenta</span><b style="word-break:break-all">' + esc(sync.user().email || '') + '</b></div>' +
+        '<div class="row between small mt" style="gap:10px;flex-wrap:wrap"><span class="muted">Estado</span><b class="' + tone + '" role="status" data-sync-state="' + esc(st.state) + '">' + esc(st.message || '—') + esc(st.state === 'ok' || st.state === 'pending' ? when : '') + '</b></div>';
+      if (st.state === 'conflict') {
+        body += '<p class="tiny muted" style="margin:10px 0 0;line-height:1.5">Antes, los datos de este dispositivo se sincronizaron con otra cuenta. Elegí qué hacer: podés sumarlos a esta cuenta o cerrar sesión para no mezclarlos.</p>' +
+          '<div class="row mt" style="gap:8px;flex-wrap:wrap"><button class="btn primary sm" data-act="sync-adopt">Sumar a esta cuenta</button><button class="btn ghost sm" data-act="sync-signout">Cerrar sesión</button></div>';
+      } else {
+        body += '<div class="row mt" style="gap:8px;flex-wrap:wrap"><button class="btn primary sm" data-act="sync-now"' + (st.state === 'syncing' ? ' disabled' : '') + '>' + (st.state === 'syncing' ? 'Sincronizando…' : 'Sincronizar ahora') + '</button><button class="btn ghost sm" data-act="sync-password">Cambiar contraseña</button><button class="btn ghost sm" data-act="sync-signout">Cerrar sesión</button></div>' +
+          '<p class="tiny faint" style="margin:10px 0 0;line-height:1.5">Al sincronizar, los datos de este dispositivo y los de la cuenta se combinan: no se borra nada de ninguno de los dos.</p>';
+      }
     } else {
       body = '<p class="small muted" style="margin:0 0 12px">Creá una cuenta para tener tus datos en varios dispositivos.</p>' +
-        '<label class="field"><span>Correo</span><input class="input" type="email" id="acc-email" autocomplete="email"></label>' +
+        '<label class="field"><span>Correo</span><input class="input" type="email" id="acc-email" autocomplete="email" inputmode="email"></label>' +
         '<label class="field"><span>Contraseña</span><input class="input" type="password" id="acc-pass" autocomplete="current-password" minlength="8"></label>' +
-        '<div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn primary sm" data-act="sync-signin">Ingresar</button><button class="btn ghost sm" data-act="sync-signup">Crear cuenta</button><button class="btn ghost sm" data-act="sync-reset">Olvidé mi contraseña</button></div>';
+        '<div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn primary sm" data-act="sync-signin">Ingresar</button><button class="btn ghost sm" data-act="sync-signup">Crear cuenta</button><button class="btn ghost sm" data-act="sync-reset">Olvidé mi contraseña</button></div>' +
+        '<p class="tiny faint" style="margin:10px 0 0;line-height:1.5">Tus datos se guardan en Supabase (servidor en São Paulo) y solo los ves vos. Cerrar sesión no borra nada de este dispositivo.</p>';
     }
-    return '<div class="section"><div class="section-title">Cuenta y sincronización</div><div class="card">' + body + '</div></div>';
+    return '<div class="section" id="account"><div class="section-title">Cuenta y sincronización</div><div class="card">' + body + '</div></div>';
   }
+
 
   function reminderRow(key, label, r) {
     return '<div class="list-item"><span class="icon-btn" style="width:36px;height:36px;background:var(--surface-2)">' + icon('bell', 'sm') + '</span><span class="grow small" style="font-weight:600">' + label + '</span>' +
@@ -184,12 +194,16 @@
     'sync-signin': () => accountCall('signIn'),
     'sync-signup': () => accountCall('signUp'),
     'sync-reset': () => accountCall('resetPassword'),
-    'sync-signout': async () => { try { await ASC.sync.signOut(); } catch (e) { ASC.ui.toast(e.message, 'error'); } ASC.app.render(); },
-    'sync-now': async () => {
-      try { const r = await ASC.sync.syncNow(); ASC.ui.toast(r.action === 'merged' ? 'Sincronizado: se combinaron cambios de otro dispositivo.' : 'Sincronizado.'); }
-      catch (e) { ASC.ui.toast(e.message || 'No se pudo sincronizar.', 'error'); }
-      ASC.app.render();
+    'sync-signout': async () => {
+      if (!(await ASC.ui.confirm({ title: '¿Cerrar sesión?', text: 'Tus datos siguen guardados en este dispositivo. Lo que no hayas sincronizado no va a estar en la cuenta hasta que vuelvas a ingresar y sincronices.', ok: 'Cerrar sesión' }))) return;
+      await ASC.sync.signOut(); ASC.ui.toast('Sesión cerrada.'); ASC.app.render();
     },
+    'sync-now': () => runSync(),
+    'sync-adopt': async () => {
+      if (!(await ASC.ui.confirm({ title: '¿Sumar estos datos a esta cuenta?', text: 'Los hábitos, registros y entrenamientos de este dispositivo se combinan con los de la cuenta ' + (ASC.sync.user() || {}).email + '. Antes se guarda una copia de seguridad local.', ok: 'Sumar' }))) return;
+      runSync({ adoptOtherAccount: true });
+    },
+    'sync-password': () => passwordSheet(false),
     'pref-sound': () => {
       const st = ASC.store.get();
       st.settings.sound = !st.settings.sound;
@@ -281,15 +295,81 @@
 
   async function accountCall(kind) {
     const email = document.getElementById('acc-email'), pass = document.getElementById('acc-pass');
-    if (!email.value || !/^\S+@\S+\.\S+$/.test(email.value)) return ASC.ui.fieldError(email, 'Ingresá un correo válido.');
+    const mail = (email.value || '').trim();
+    if (!mail || !/^\S+@\S+\.\S+$/.test(mail)) return ASC.ui.fieldError(email, 'Ingresá un correo válido.');
     if (kind !== 'resetPassword' && (!pass.value || pass.value.length < 8)) return ASC.ui.fieldError(pass, 'La contraseña debe tener al menos 8 caracteres.');
+    const btns = document.querySelectorAll('#account button'); btns.forEach((b) => (b.disabled = true));
     try {
-      if (kind === 'resetPassword') { await ASC.sync.resetPassword(email.value); ASC.ui.toast('Te enviamos un correo para cambiar la contraseña.'); }
-      else if (kind === 'signUp') { await ASC.sync.signUp(email.value, pass.value); ASC.ui.toast('Cuenta creada. Revisá tu correo para confirmarla.'); }
-      else { await ASC.sync.signIn(email.value, pass.value); ASC.ui.toast('Sesión iniciada.'); }
+      if (kind === 'resetPassword') {
+        await ASC.sync.resetPassword(mail);
+        ASC.ui.toast('Si hay una cuenta con ese correo, te llegó un enlace para crear una contraseña nueva.');
+      } else if (kind === 'signUp') {
+        const r = await ASC.sync.signUp(mail, pass.value);
+        if (r.needsConfirmation) ASC.ui.toast('Cuenta creada. Te enviamos un correo: tocá el enlace para confirmarla y después ingresá.');
+        else { ASC.ui.toast('Cuenta creada.'); runSync({ quiet: true }); }
+      } else {
+        await ASC.sync.signIn(mail, pass.value);
+        ASC.ui.toast('Sesión iniciada.');
+        runSync({ quiet: true });
+      }
       ASC.app.render();
-    } catch (e) { ASC.ui.toast(e.message || 'No se pudo completar.', 'error'); }
+    } catch (e) {
+      btns.forEach((b) => (b.disabled = false));
+      ASC.ui.toast(e.message || 'No se pudo completar.', 'error');
+    }
   }
+
+  /** Ejecuta la sincronización y muestra el resultado. quiet: no avisar si no hubo nada para combinar. */
+  async function runSync(opts) {
+    opts = opts || {};
+    if (!ASC.sync.user()) return;
+    if (ASC.sync.status().state === 'conflict' && !opts.adoptOtherAccount) { if (!opts.quiet) ASC.ui.toast('Primero elegí qué hacer con los datos de la otra cuenta.', 'error'); ASC.app.render(); return; }
+    try {
+      const r = await ASC.sync.syncNow(opts);
+      if (r.action === 'merged') ASC.ui.toast('Sincronizado: se combinaron tus datos con los de la cuenta.');
+      else if (!opts.quiet && r.action !== 'busy') ASC.ui.toast('Sincronizado.');
+    } catch (e) {
+      if (!(opts.quiet && (e.offline || e.signedOut))) ASC.ui.toast(e.message || 'No se pudo sincronizar.', 'error');
+    }
+    ASC.app.render();
+  }
+
+  /** Nueva contraseña (desde el enlace del correo o desde el perfil) */
+  function passwordSheet(fromEmail) {
+    ASC.ui.sheet({
+      title: 'Nueva contraseña',
+      body: (fromEmail ? '<p class="small muted" style="margin:0 0 12px">Elegí tu nueva contraseña para ' + esc((ASC.sync.user() || {}).email || 'tu cuenta') + '.</p>' : '') +
+        '<label class="field"><span>Contraseña nueva</span><input class="input" type="password" id="np-1" autocomplete="new-password" minlength="8"></label>' +
+        '<label class="field"><span>Repetila</span><input class="input" type="password" id="np-2" autocomplete="new-password" minlength="8" data-enter="np-save"></label>' +
+        '<button class="btn primary block" data-act="np-save">Guardar contraseña</button>',
+    });
+  }
+  ASC.actions['np-save'] = async (el) => {
+    const a = document.getElementById('np-1'), b = document.getElementById('np-2');
+    if (!a.value || a.value.length < 8) return ASC.ui.fieldError(a, 'Al menos 8 caracteres.');
+    if (a.value !== b.value) return ASC.ui.fieldError(b, 'Las contraseñas no coinciden.');
+    el.disabled = true;
+    try {
+      await ASC.sync.updatePassword(a.value);
+      ASC.ui.closeTop ? ASC.ui.closeTop() : document.querySelector('.overlay')._close();
+      ASC.ui.toast('Contraseña actualizada.');
+    } catch (e) { el.disabled = false; ASC.ui.toast(e.message, 'error'); }
+  };
+
+  /** Después de abrir un enlace de correo */
+  function afterRedirect(r) {
+    location.hash = '#/profile';
+    if (r.type === 'error') return ASC.ui.toast(r.message, 'error');
+    if (r.type === 'recovery') return passwordSheet(true);
+    ASC.ui.toast(r.type === 'signup' ? 'Correo confirmado. Ya ingresaste.' : 'Sesión iniciada.');
+    runSync({ quiet: true });
+  }
+  /** Al abrir la app con sesión: sincroniza solo si hay algo pendiente y no hay conflicto de cuentas */
+  function autoSync() {
+    const st = ASC.sync.status();
+    if (ASC.sync.user() && st.state === 'pending' && navigator.onLine) runSync({ quiet: true });
+  }
+  ASC.accountUI = { afterRedirect, autoSync, runSync };
 
   /** Completa la información de almacenamiento y la lista de copias (asíncrono) */
   async function after() {

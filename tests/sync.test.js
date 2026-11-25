@@ -82,9 +82,13 @@ t('v3: ánimo (el más reciente), rutinas de hábitos y actividades se combinan'
   assert.deepStrictEqual(m.routineLogs.r1['2026-11-20'].sort(), ['i1', 'i2']);
 });
 
-console.log('Configuración sin credenciales');
-t('no hay credenciales cargadas: nada se conecta solo', () => {
-  assert.strictEqual(C.supabase.url, ''); assert.strictEqual(C.supabase.anonKey, '');
+console.log('Configuración: solo valores públicos');
+t('la configuración solo tiene la URL y la clave PÚBLICA de Supabase (nunca secretas)', () => {
+  const src = require('fs').readFileSync(path + 'config/app-config.js', 'utf8');
+  assert.ok(/^https:\/\/[a-z0-9]+\.supabase\.co$/.test(C.supabase.url));
+  assert.ok(/^sb_publishable_/.test(C.supabase.anonKey) || /^eyJ/.test(C.supabase.anonKey));
+  assert.ok(!/sb_secret_[A-Za-z0-9]/.test(src), 'no hay claves secretas');
+  if (/^eyJ/.test(C.supabase.anonKey)) assert.ok(!/service_role/.test(Buffer.from(C.supabase.anonKey.split('.')[1], 'base64').toString()), 'no es la clave service_role');
   assert.strictEqual(C.push.vapidPublicKey, '');
 });
 t('sin plan pago, ninguna función queda bloqueada', () => {

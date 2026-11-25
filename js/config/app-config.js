@@ -1,18 +1,19 @@
 /* ASCEND · Configuración de servicios externos
  *
- * Todo vacío a propósito: la app funciona 100 % local sin credenciales.
- * NO poner acá claves secretas (service_role, claves privadas VAPID): este archivo se descarga al navegador.
- * La "anon key" de Supabase sí es pública por diseño (la seguridad la dan las reglas RLS del servidor).
+ * Solo valores PÚBLICOS: este archivo se descarga al navegador y está en un repositorio público.
+ * NUNCA poner acá claves secretas (sb_secret_…, service_role, claves privadas VAPID) ni contraseñas.
+ * La clave publishable de Supabase es pública por diseño: la seguridad la dan el inicio de sesión y las reglas RLS.
+ * Sin url/anonKey la app funciona igual, 100 % local (la sección de cuentas muestra "No disponible").
  * Ver docs/SUPABASE.md y docs/NOTIFICACIONES.md.
  */
 (function (root) {
   const ASC = (root.ASC = root.ASC || {});
   ASC.config = {
     supabase: {
-      url: '', // ej. https://xxxx.supabase.co
-      anonKey: '', // clave pública "anon" del proyecto
+      url: 'https://vqugkhklctxgmcosopod.supabase.co', // proyecto ASCEND (São Paulo)
+      anonKey: 'sb_publishable_0TbbpyLdDdzHSZ3gCw0BOQ_GN8qMnoi', // clave PÚBLICA (publishable): segura en el navegador porque los datos están protegidos por RLS
       sdkUrl: 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js',
-      redirectTo: '', // URL de la app para el enlace de recuperación de contraseña
+      redirectTo: 'https://blanncoou.github.io/ascend/', // adonde vuelven los enlaces de confirmación y recuperación
     },
     push: {
       vapidPublicKey: '', // clave pública VAPID (la privada vive solo en el servidor)

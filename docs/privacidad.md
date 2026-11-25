@@ -37,7 +37,7 @@ Esto significa que:
 - Si borrás los datos del navegador, desinstalás la app o perdés el dispositivo, **se pierden**, salvo que hayas exportado un archivo.
 - Quien tenga acceso a tu dispositivo desbloqueado puede ver la app.
 
-**Si en el futuro activás una cuenta:** tus datos se copiarían a un servidor de [proveedor, p. ej. Supabase] ubicado en [región], para sincronizar tus dispositivos. Esta sección se actualizará antes de habilitar esa función, indicando el proveedor, la ubicación de los servidores y, si corresponde, la transferencia internacional de datos.
+**Si creás una cuenta (opcional):** tu correo, tu contraseña (guardada cifrada por el proveedor, nunca en texto plano) y una copia de tus datos de ASCEND (hábitos, registros, objetivos, rutinas, entrenamientos, diario, ajustes y perfil) se guardan en **Supabase**, en servidores de **São Paulo, Brasil** (AWS sa-east-1), para sincronizar tus dispositivos. Esto implica una transferencia internacional de datos fuera de Argentina. Solo vos podés leer tus datos: el servidor aplica reglas de acceso por usuario (RLS). [Pendiente de revisión legal: base legal, plazos de conservación y procedimiento de eliminación.]
 
 Las tipografías de la app se descargan de Google Fonts, por lo que tu navegador se conecta a servidores de Google (que reciben datos técnicos como la dirección IP). [Evaluar alojar las fuentes localmente para evitarlo.]
 
@@ -64,7 +64,7 @@ En la versión actual, como los datos están solo en tu dispositivo, podés ejer
 ## 7. Seguridad
 
 - Los datos quedan en el almacenamiento del navegador de tu dispositivo, protegido por el sistema operativo.
-- Si en el futuro se habilitan cuentas, el acceso al servidor estaría limitado para que cada usuario solo pueda leer sus propios datos.
+- Con cuenta, el acceso al servidor está limitado para que cada usuario solo pueda leer y modificar sus propios datos (reglas RLS verificadas en el proyecto).
 - Ningún sistema es 100 % seguro: te recomendamos bloquear tu dispositivo con contraseña o biometría.
 
 ## 8. Cuánto tiempo se guardan

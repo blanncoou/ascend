@@ -139,7 +139,7 @@ Copias locales: automática cada 7 días (al abrir la app; se guardan 4), manual
 
 | Qué | Para qué | Dónde | Estado |
 |---|---|---|---|
-| Proyecto Supabase (URL + clave anon) | Cuentas y sincronización | `js/config/app-config.js`, `docs/SUPABASE.md` | **No configurado** |
+| Proyecto Supabase (URL + clave publishable) | Cuentas y sincronización | `js/config/app-config.js`, `docs/SUPABASE.md` | **Configurado** (proyecto ASCEND, São Paulo) |
 | Edge Function de eliminación de cuenta | Exigido por las tiendas si hay cuentas | `docs/SUPABASE.md` | No hecho |
 | Claves VAPID + servidor de envío | Recordatorios con la app cerrada | `docs/NOTIFICACIONES.md` | **No configurado** |
 | Hosting con https | Instalar la app y modo sin conexión en el celular | — | Pendiente |
@@ -154,7 +154,7 @@ Nada de esto se inventó ni se simuló: mientras falte, la app lo indica y sigue
 
 | Función | Por qué no está |
 |---|---|
-| Sincronización entre dispositivos funcionando | Necesita un proyecto Supabase real; el código está listo pero no se probó contra un servidor. |
+| Correos de cuenta para otras personas | El servidor de correo gratuito de Supabase solo envía a los miembros del equipo (2 por hora). Para sumar usuarios hace falta SMTP propio. |
 | Notificaciones con la app cerrada | Requiere servidor de Web Push. En iPhone, además, solo con la app instalada (iOS 16.4+). |
 | Mensajes motivacionales | Activos con la app abierta o en segundo plano reciente. Con la app cerrada: app nativa (adaptador Capacitor preparado) o servidor de Web Push. Ver docs/NOTIFICACIONES.md |
 | Copia semanal **fuera** del dispositivo | Sin servidor no se puede hacer automática; se ofrece Exportar a archivo. |
@@ -177,6 +177,7 @@ Nada de esto se inventó ni se simuló: mientras falte, la app lo indica y sigue
 | `node tests/logica.test.js` (rachas, récords, niveles) | OK |
 | `node tests/reglas.test.js` (ventana de edición, comodines, cantidades, negativos, XP, semanas cerradas) | 21/21 OK |
 | `node tests/gimnasio.test.js` (progresión, discos, superseries, rangos de reps) | 14/14 OK |
+| `node tests/sync-cliente.test.js` (cliente de sincronización con servidor simulado: dos dispositivos, cuentas, conflictos) | 15/15 OK |
 | `node tests/motivacion.test.js` (mensajes motivacionales: horarios, tope, silencio, repeticiones, privacidad) | 22/22 OK |
 | `python3 tests/e2e/motivacion.py` (pantalla tras el registro, permiso, configuración, envío, permiso revocado) | 30/30 OK |
 | `node tests/sync.test.js` (combinación entre dispositivos, config sin credenciales) | 13/13 OK |
@@ -208,7 +209,7 @@ ascend-web/
 │  ├─ core/           dates · db (IndexedDB) · store (datos, migraciones, copias) · perf
 │  ├─ data/           exercises.js (168 ejercicios) · exercise-guide.js (patrones, fichas, rutinas básicas) · legal.js (generado)
 │  ├─ domain/         LÓGICA PURA: rules, habits, gym, progress, coach, routine-guide, game, rewards, insights, calendar, planner, recovery, wellbeing
-│  ├─ sync/           merge (probado) · sync (Supabase, inactivo) · push (inactivo)
+│  ├─ sync/           merge (probado) · sync (Supabase, activo) · push (inactivo)
 │  ├─ ui/             ui.js (componentes accesibles) · sound.js
 │  ├─ screens/        una pantalla por archivo (+ tutorial y legal)
 │  └─ app.js          router, eventos, logros, recordatorios, PWA

@@ -328,7 +328,15 @@
     }, 30000);
     document.addEventListener('visibilitychange', () => { if (!document.hidden) { if (ASC.motivationUI) ASC.motivationUI.syncPermission(); render(); reminderTick(); if (ASC.motivationUI) ASC.motivationUI.tick(); } });
     if (ASC.motivationUI) { ASC.motivationUI.syncPermission(); ASC.motivationUI.tick(); }
+    // Cuentas: procesar enlaces de correo (confirmación / nueva contraseña) ANTES del primer render
+    const authLink = ASC.sync && ASC.sync.isConfigured() ? await ASC.sync.handleAuthRedirect() : null;
     render();
+    if (ASC.sync && ASC.sync.isConfigured()) {
+      ASC.sync.onChange(() => { if ((root$().dataset.screen || '').indexOf('profile') === 0 && !document.querySelector('#acc-email:focus, #acc-pass:focus, .overlay')) render(); });
+      if (authLink && ASC.accountUI) ASC.accountUI.afterRedirect(authLink);
+      // restaurar la sesión guardada (sin bloquear el inicio) y sincronizar si hay cambios
+      else if (localStorage.getItem('ascend-auth')) ASC.sync.ensureClient().then(() => ASC.accountUI && ASC.accountUI.autoSync()).catch(() => {});
+    }
     checkAchievements(true);
     setTimeout(weekSummary, 900);
     registerSW();

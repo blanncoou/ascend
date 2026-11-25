@@ -5,7 +5,7 @@
  * - Notificaciones: muestra avisos enviados desde la app y, cuando exista un servidor de push, eventos 'push'.
  * Al cambiar archivos, subir VERSION para forzar la actualización.
  */
-const VERSION = 'ascend-v3.1.0';
+const VERSION = 'ascend-v3.2.0';
 const SHELL = [
   './',
   'index.html',
